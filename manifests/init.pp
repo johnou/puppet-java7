@@ -1,9 +1,6 @@
 class java7 {
-	$version = "1.7.0_05"
-	$tarball = $architecture ? {
-		"amd64" => "jdk-7u5-linux-x64.tar.gz",
-		default => "jdk-7u5-linux-i586.tar.gz",
-	}
+	$version = "1.7.0_06"
+	$tarball = "jdk-7u6-linux-i586.tar.gz"
 	
 	package { "java-common":
 		ensure => latest,
@@ -23,7 +20,7 @@ class java7 {
 		require => File["java-tarball"],
 	}
 	
-	file { "/usr/lib/jvm":
+	file { "/usr/java":
 		ensure => directory,
 		owner => "root",
 		group => "root",
@@ -31,39 +28,32 @@ class java7 {
 	}
 
 	exec { "move-java-directory":
-		command => "/bin/cp -r jdk${version} /usr/lib/jvm/jdk${version}",
-		creates => "/usr/lib/jvm/jdk${version}",
+		command => "/bin/cp -r jdk${version} /usr/java/jdk${version}",
+		creates => "/usr/java/jdk${version}",
 		cwd => "/tmp",
 		user => "root",
-		require => File["/usr/lib/jvm"],
+		require => File["/usr/java"],
 		notify => [
 			Exec["install-java-alternative"],
-			Exec["install-javac-alternative"],
-			Exec["install-javaws-alternative"]
+			Exec["install-javac-alternative"]
 		]
 	}
 	
-	file { "/usr/lib/jvm/java-7-oracle":
+	file { "/usr/java/latest":
 		ensure => link,
-		target => "/usr/lib/jvm/jdk${version}",
+		target => "/usr/java/jdk${version}",
 		require => Exec["move-java-directory"]
 	}
 	
 	exec { "install-java-alternative":
-		command => '/usr/sbin/update-alternatives --install "/usr/bin/java" "java" "/usr/lib/jvm/java-7-oracle/bin/java" 1',
+		command => '/usr/sbin/update-alternatives --install "/usr/bin/java" "java" "/usr/java/latest/bin/java" 1',
 		refreshonly => true,
-		require => File["/usr/lib/jvm/java-7-oracle"],
+		require => File["/usr/java/latest"],
 	}
 
 	exec { "install-javac-alternative":
-		command => '/usr/sbin/update-alternatives --install "/usr/bin/javac" "javac" "/usr/lib/jvm/java-7-oracle/bin/javac" 1',
+		command => '/usr/sbin/update-alternatives --install "/usr/bin/javac" "javac" "/usr/java/latest/bin/javac" 1',
 		refreshonly => true,
-		require => File["/usr/lib/jvm/java-7-oracle"],
-	}
-
-	exec { "install-javaws-alternative":
-		command => '/usr/sbin/update-alternatives --install "/usr/bin/javaws" "javaws" "/usr/lib/jvm/java-7-oracle/bin/javaws" 1',
-		refreshonly => true,
-		require => File["/usr/lib/jvm/java-7-oracle"],
+		require => File["/usr/java/latest"],
 	}
 }
